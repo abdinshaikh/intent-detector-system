@@ -378,34 +378,14 @@ with col_prediction:
             top3_df
         ) = st.session_state.prediction_result
 
-        # IMPORTANT:
-        # HTML starts at the beginning of the string.
-        # This prevents Streamlit from displaying
-        # the HTML tags as plain text.
+        st.metric(
+            label="Predicted Intent",
+            value=predicted_intent
+        )
 
-        st.markdown(
-            f"""
-<div class="prediction-card">
-
-    <div class="prediction-label">
-        Predicted Intent
-    </div>
-
-    <div class="prediction-value">
-        {predicted_intent}
-    </div>
-
-    <div class="prediction-label">
-        Prediction Probability
-    </div>
-
-    <div class="prediction-value">
-        {predicted_probability:.2f}%
-    </div>
-
-</div>
-""",
-            unsafe_allow_html=True
+        st.metric(
+            label="Prediction Probability",
+            value=f"{predicted_probability:.2f}%"
         )
 
     else:
