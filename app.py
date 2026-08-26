@@ -96,6 +96,39 @@ intent_names = [
 
 
 # ============================================================
+# EXAMPLE UTTERANCES
+# ============================================================
+
+examples = [
+    "wake me up at 7 tomorrow",
+    "what time is my alarm",
+    "cancel my alarm",
+    "turn the lights off",
+    "make the lights brighter",
+    "play some music",
+    "turn the volume down",
+    "what is the weather today",
+    "find me a taxi",
+    "send an email to John",
+    "what is the capital of France",
+    "tell me a joke",
+    "what's happening in LA?",
+    "good night"
+]
+
+
+# ============================================================
+# SESSION STATE
+# ============================================================
+
+if "message_input" not in st.session_state:
+    st.session_state.message_input = ""
+
+if "prediction_result" not in st.session_state:
+    st.session_state.prediction_result = None
+
+
+# ============================================================
 # MODEL LOADING
 # ============================================================
 
@@ -110,6 +143,7 @@ def load_model():
         MODEL_NAME
     )
 
+    # Streamlit Community Cloud uses CPU
     device = torch.device("cpu")
 
     model.to(device)
@@ -134,7 +168,6 @@ st.markdown(
     """
     <style>
 
-    /* Main title */
     .main-title {
         text-align: center;
         font-size: 2.3rem;
@@ -143,7 +176,6 @@ st.markdown(
         margin-bottom: 0.2rem;
     }
 
-    /* Subtitle */
     .subtitle {
         text-align: center;
         color: #666;
@@ -151,7 +183,6 @@ st.markdown(
         margin-bottom: 2rem;
     }
 
-    /* Prediction card */
     .prediction-card {
         padding: 1.5rem;
         border-radius: 12px;
@@ -173,12 +204,6 @@ st.markdown(
         margin-bottom: 1.2rem;
     }
 
-    /* Example buttons */
-    div.stButton > button {
-        border-radius: 8px;
-    }
-
-    /* Footer */
     .footer {
         text-align: center;
         color: #888;
@@ -215,39 +240,6 @@ st.markdown(
 
 
 # ============================================================
-# EXAMPLES
-# ============================================================
-
-examples = [
-    "wake me up at 7 tomorrow",
-    "what time is my alarm",
-    "cancel my alarm",
-    "turn the lights off",
-    "make the lights brighter",
-    "play some music",
-    "turn the volume down",
-    "what is the weather today",
-    "find me a taxi",
-    "send an email to John",
-    "what is the capital of France",
-    "tell me a joke",
-    "what's happening in LA?",
-    "good night"
-]
-
-
-# ============================================================
-# SESSION STATE FOR EXAMPLE BUTTONS
-# ============================================================
-
-if "message" not in st.session_state:
-    st.session_state.message = ""
-
-if "message_input" not in st.session_state:
-    st.session_state.message_input = ""
-
-
-# ============================================================
 # INPUT + PREDICTION
 # ============================================================
 
@@ -257,24 +249,21 @@ col_input, col_prediction = st.columns(
 )
 
 
-# ------------------------------------------------------------
-# INPUT
-# ------------------------------------------------------------
+# ============================================================
+# INPUT AREA
+# ============================================================
 
 with col_input:
 
     st.subheader("Enter your message")
 
-    text = st.text_area(
+    st.text_area(
         "Message",
-        height=130,
         placeholder="Example: wake me up at 7 tomorrow",
+        height=130,
         label_visibility="collapsed",
         key="message_input"
     )
-
-    st.session_state.message_input = example
-    st.rerun()
 
     predict_button = st.button(
         "🔍 Predict Intent",
@@ -340,20 +329,22 @@ def predict_intent(text):
             "Probability": probability.item() * 100
         })
 
+    top3_df = pd.DataFrame(top3_data)
+
     return (
         predicted_intent,
         predicted_probability,
-        pd.DataFrame(top3_data)
+        top3_df
     )
 
 
 # ============================================================
-# PREDICTION RESULT
+# RUN PREDICTION
 # ============================================================
 
-prediction_result = None
-
 if predict_button:
+
+    text = st.session_state.message_input
 
     if not text.strip():
 
@@ -361,24 +352,30 @@ if predict_button:
             "Please enter a message first."
         )
 
+        st.session_state.prediction_result = None
+
     else:
 
-        prediction_result = predict_intent(text)
+        st.session_state.prediction_result = (
+            predict_intent(text)
+        )
 
 
-# ------------------------------------------------------------
-# PREDICTION CARD
-# ------------------------------------------------------------
+# ============================================================
+# DISPLAY PREDICTION
+# ============================================================
 
 with col_prediction:
 
     st.subheader("Prediction")
 
-    if prediction_result is not None:
+    if st.session_state.prediction_result is not None:
 
-        predicted_intent, predicted_probability, top3_df = (
-            prediction_result
-        )
+        (
+            predicted_intent,
+            predicted_probability,
+            top3_df
+        ) = st.session_state.prediction_result
 
         st.markdown(
             f"""
@@ -417,23 +414,36 @@ with col_prediction:
 # TOP 3 PREDICTIONS
 # ============================================================
 
-if prediction_result is not None:
+if st.session_state.prediction_result is not None:
+
+    (
+        predicted_intent,
+        predicted_probability,
+        top3_df
+    ) = st.session_state.prediction_result
 
     st.markdown("---")
 
     st.subheader("Top 3 Predictions")
 
-    # Plotly chart
+    # --------------------------------------------------------
+    # PREPARE CHART DATA
+    # --------------------------------------------------------
+
     chart_df = top3_df.copy()
 
-    chart_df["Probability"] = chart_df[
-        "Probability"
-    ].round(2)
+    chart_df["Probability"] = (
+        chart_df["Probability"].round(2)
+    )
 
     chart_df = chart_df.sort_values(
         "Probability",
         ascending=True
     )
+
+    # --------------------------------------------------------
+    # PLOTLY CHART
+    # --------------------------------------------------------
 
     fig = px.bar(
         chart_df,
@@ -454,22 +464,19 @@ if prediction_result is not None:
     )
 
     fig.update_layout(
-        height=280,
+        height=300,
         margin=dict(
             l=20,
-            r=40,
-            t=50,
+            r=50,
+            t=55,
             b=20
         ),
         xaxis=dict(
             range=[
                 0,
-                min(
+                max(
                     100,
-                    max(
-                        100,
-                        chart_df["Probability"].max() * 1.15
-                    )
+                    chart_df["Probability"].max() * 1.15
                 )
             ]
         )
@@ -530,7 +537,13 @@ for i, example in enumerate(examples):
             use_container_width=True
         ):
 
+            # Put selected example into input box
             st.session_state.message_input = example
+
+            # Clear previous prediction
+            st.session_state.prediction_result = None
+
+            # Rerun so the text area displays the example
             st.rerun()
 
 
