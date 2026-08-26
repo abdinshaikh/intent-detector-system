@@ -379,25 +379,25 @@ with col_prediction:
 
         st.markdown(
             f"""
-        <div class="prediction-card">
-            <div class="prediction-label">
-                 Predicted Intent
-            </div>
+            <div class="prediction-card">
+                <div class="prediction-label">
+                     Predicted Intent
+                </div>
 
-            <div class="prediction-value">
-                {predicted_intent}
-            </div>
+                <div class="prediction-value">
+                    {predicted_intent}
+                </div>
 
-            <div class="prediction-label">
-                  Prediction Probability
-            </div>
+                <div class="prediction-label">
+                      Prediction Probability
+                </div>
 
-            <div class="prediction-value">
-                {predicted_probability:.2f}%
-            </div>
+                <div class="prediction-value">
+                    {predicted_probability:.2f}%
+                </div>
 
-        </div>
-        """,
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
