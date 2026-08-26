@@ -143,7 +143,8 @@ def load_model():
         MODEL_NAME
     )
 
-    # Streamlit Community Cloud uses CPU
+    # Streamlit Community Cloud
+    # Use CPU for inference.
     device = torch.device("cpu")
 
     model.to(device)
@@ -166,54 +167,54 @@ with st.spinner("Loading BERT model..."):
 
 st.markdown(
     """
-    <style>
+<style>
 
-    .main-title {
-        text-align: center;
-        font-size: 2.3rem;
-        font-weight: 700;
-        margin-top: 0.5rem;
-        margin-bottom: 0.2rem;
-    }
+.main-title {
+    text-align: center;
+    font-size: 2.3rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    margin-bottom: 0.2rem;
+}
 
-    .subtitle {
-        text-align: center;
-        color: #666;
-        font-size: 1rem;
-        margin-bottom: 2rem;
-    }
+.subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
 
-    .prediction-card {
-        padding: 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #ddd;
-        background-color: #fafafa;
-        text-align: center;
-        min-height: 190px;
-    }
+.prediction-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    background-color: #fafafa;
+    text-align: center;
+    min-height: 190px;
+}
 
-    .prediction-label {
-        color: #777;
-        font-size: 0.85rem;
-        margin-bottom: 0.3rem;
-    }
+.prediction-label {
+    color: #777;
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
+}
 
-    .prediction-value {
-        font-size: 1.45rem;
-        font-weight: 700;
-        margin-bottom: 1.2rem;
-    }
+.prediction-value {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+}
 
-    .footer {
-        text-align: center;
-        color: #888;
-        font-size: 0.8rem;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-    }
+.footer {
+    text-align: center;
+    color: #888;
+    font-size: 0.8rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
 
-    </style>
-    """,
+</style>
+""",
     unsafe_allow_html=True
 )
 
@@ -229,12 +230,12 @@ st.markdown(
 
 st.markdown(
     """
-    <div class="subtitle">
-        BERT-based Natural Language Intent Classification<br>
-        Fine-tuned on the Amazon MASSIVE English dataset with
-        <b>60 intent classes</b>
-    </div>
-    """,
+<div class="subtitle">
+    BERT-based Natural Language Intent Classification<br>
+    Fine-tuned on the Amazon MASSIVE English dataset with
+    <b>60 intent classes</b>
+</div>
+""",
     unsafe_allow_html=True
 )
 
@@ -377,27 +378,33 @@ with col_prediction:
             top3_df
         ) = st.session_state.prediction_result
 
+        # IMPORTANT:
+        # HTML starts at the beginning of the string.
+        # This prevents Streamlit from displaying
+        # the HTML tags as plain text.
+
         st.markdown(
             f"""
-            <div class="prediction-card">
-                <div class="prediction-label">
-                     Predicted Intent
-                </div>
+<div class="prediction-card">
 
-                <div class="prediction-value">
-                    {predicted_intent}
-                </div>
+    <div class="prediction-label">
+        Predicted Intent
+    </div>
 
-                <div class="prediction-label">
-                      Prediction Probability
-                </div>
+    <div class="prediction-value">
+        {predicted_intent}
+    </div>
 
-                <div class="prediction-value">
-                    {predicted_probability:.2f}%
-                </div>
+    <div class="prediction-label">
+        Prediction Probability
+    </div>
 
-            </div>
-            """,
+    <div class="prediction-value">
+        {predicted_probability:.2f}%
+    </div>
+
+</div>
+""",
             unsafe_allow_html=True
         )
 
@@ -425,6 +432,7 @@ if st.session_state.prediction_result is not None:
 
     st.subheader("Top 3 Predictions")
 
+
     # --------------------------------------------------------
     # PREPARE CHART DATA
     # --------------------------------------------------------
@@ -439,6 +447,7 @@ if st.session_state.prediction_result is not None:
         "Probability",
         ascending=True
     )
+
 
     # --------------------------------------------------------
     # PLOTLY CHART
@@ -536,13 +545,13 @@ for i, example in enumerate(examples):
             use_container_width=True
         ):
 
-            # Put selected example into input box
+            # Put example into input box
             st.session_state.message_input = example
 
             # Clear previous prediction
             st.session_state.prediction_result = None
 
-            # Rerun so the text area displays the example
+            # Rerun application
             st.rerun()
 
 
@@ -560,34 +569,34 @@ with st.expander("📊 Model Information"):
 
         st.markdown(
             """
-            **Model:** `abdinshaikh/intenr-bert`
+**Model:** `abdinshaikh/intenr-bert`
 
-            **Architecture:** BERT for Sequence Classification
+**Architecture:** BERT for Sequence Classification
 
-            **Task:** Single-label intent classification
+**Task:** Single-label intent classification
 
-            **Number of intents:** 60
+**Number of intents:** 60
 
-            **Maximum sequence length:** 128 tokens
+**Maximum sequence length:** 128 tokens
 
-            **Training epochs:** 3
-            """
+**Training epochs:** 3
+"""
         )
 
     with info_col2:
 
         st.markdown(
             """
-            **Test Accuracy:** 88.90%
+**Test Accuracy:** 88.90%
 
-            **Test Macro F1:** 86.33%
+**Test Macro F1:** 86.33%
 
-            **Test Weighted F1:** 88.86%
+**Test Weighted F1:** 88.86%
 
-            **Baseline Accuracy:** 80.42%
+**Baseline Accuracy:** 80.42%
 
-            **Baseline Macro F1:** 75.45%
-            """
+**Baseline Macro F1:** 75.45%
+"""
         )
 
 
@@ -597,9 +606,9 @@ with st.expander("📊 Model Information"):
 
 st.markdown(
     """
-    <div class="footer">
-        Amazon MASSIVE Intent Detection • Fine-tuned BERT
-    </div>
-    """,
+<div class="footer">
+    Amazon MASSIVE Intent Detection • Fine-tuned BERT
+</div>
+""",
     unsafe_allow_html=True
 )
