@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import torch
+import plotly.express as px
 
 from transformers import (
     AutoTokenizer,
@@ -13,8 +14,7 @@ from transformers import (
 # ============================================================
 
 st.set_page_config(
-    page_title="Amazon MASSIVE Intent Detector",
-    page_icon="🧠",
+    page_title="Intent Detector System",
     layout="wide"
 )
 
@@ -24,7 +24,6 @@ st.set_page_config(
 # ============================================================
 
 MODEL_NAME = "abdinshaikh/intenr-bert"
-
 MAX_LENGTH = 128
 
 
@@ -111,7 +110,6 @@ def load_model():
         MODEL_NAME
     )
 
-    # Streamlit Community Cloud will generally use CPU
     device = torch.device("cpu")
 
     model.to(device)
@@ -125,7 +123,6 @@ def load_model():
 # ============================================================
 
 with st.spinner("Loading BERT model..."):
-
     tokenizer, model, device = load_model()
 
 
@@ -137,13 +134,16 @@ st.markdown(
     """
     <style>
 
+    /* Main title */
     .main-title {
         text-align: center;
-        font-size: 2.2rem;
+        font-size: 2.3rem;
         font-weight: 700;
+        margin-top: 0.5rem;
         margin-bottom: 0.2rem;
     }
 
+    /* Subtitle */
     .subtitle {
         text-align: center;
         color: #666;
@@ -151,30 +151,40 @@ st.markdown(
         margin-bottom: 2rem;
     }
 
-    .prediction-box {
-        padding: 1.2rem;
-        border-radius: 10px;
+    /* Prediction card */
+    .prediction-card {
+        padding: 1.5rem;
+        border-radius: 12px;
         border: 1px solid #ddd;
         background-color: #fafafa;
         text-align: center;
+        min-height: 190px;
     }
 
     .prediction-label {
-        color: #666;
-        font-size: 0.9rem;
+        color: #777;
+        font-size: 0.85rem;
+        margin-bottom: 0.3rem;
     }
 
     .prediction-value {
-        font-size: 1.4rem;
-        font-weight: 600;
-        margin-top: 0.3rem;
+        font-size: 1.45rem;
+        font-weight: 700;
+        margin-bottom: 1.2rem;
     }
 
+    /* Example buttons */
+    div.stButton > button {
+        border-radius: 8px;
+    }
+
+    /* Footer */
     .footer {
         text-align: center;
-        color: #777;
+        color: #888;
         font-size: 0.8rem;
         margin-top: 2rem;
+        margin-bottom: 1rem;
     }
 
     </style>
@@ -188,16 +198,16 @@ st.markdown(
 # ============================================================
 
 st.markdown(
-    '<div class="main-title">🧠 Amazon MASSIVE Intent Detector</div>',
+    '<div class="main-title">Intent Detector System</div>',
     unsafe_allow_html=True
 )
 
 st.markdown(
     """
     <div class="subtitle">
-    BERT-based Natural Language Intent Classification<br>
-    Fine-tuned on the Amazon MASSIVE English dataset with
-    <b>60 intent classes</b>
+        BERT-based Natural Language Intent Classification<br>
+        Fine-tuned on the Amazon MASSIVE English dataset with
+        <b>60 intent classes</b>
     </div>
     """,
     unsafe_allow_html=True
@@ -205,14 +215,51 @@ st.markdown(
 
 
 # ============================================================
-# INPUT AREA
+# EXAMPLES
 # ============================================================
 
-col_input, col_result = st.columns(
+examples = [
+    "wake me up at 7 tomorrow",
+    "what time is my alarm",
+    "cancel my alarm",
+    "turn the lights off",
+    "make the lights brighter",
+    "play some music",
+    "turn the volume down",
+    "what is the weather today",
+    "find me a taxi",
+    "send an email to John",
+    "what is the capital of France",
+    "tell me a joke",
+    "what's happening in LA?",
+    "good night"
+]
+
+
+# ============================================================
+# SESSION STATE FOR EXAMPLE BUTTONS
+# ============================================================
+
+if "message" not in st.session_state:
+    st.session_state.message = ""
+
+if "message_input" not in st.session_state:
+    st.session_state.message_input = ""
+
+
+# ============================================================
+# INPUT + PREDICTION
+# ============================================================
+
+col_input, col_prediction = st.columns(
     [2, 1],
     gap="large"
 )
 
+
+# ------------------------------------------------------------
+# INPUT
+# ------------------------------------------------------------
 
 with col_input:
 
@@ -220,10 +267,14 @@ with col_input:
 
     text = st.text_area(
         "Message",
-        placeholder="Example: wake me up at 7 tomorrow",
         height=130,
-        label_visibility="collapsed"
+        placeholder="Example: wake me up at 7 tomorrow",
+        label_visibility="collapsed",
+        key="message_input"
     )
+
+    st.session_state.message_input = example
+    st.rerun()
 
     predict_button = st.button(
         "🔍 Predict Intent",
@@ -289,92 +340,151 @@ def predict_intent(text):
             "Probability": probability.item() * 100
         })
 
-    top3_df = pd.DataFrame(top3_data)
-
     return (
         predicted_intent,
         predicted_probability,
-        top3_df
+        pd.DataFrame(top3_data)
     )
 
 
 # ============================================================
-# RESULT AREA
+# PREDICTION RESULT
 # ============================================================
 
-with col_result:
+prediction_result = None
+
+if predict_button:
+
+    if not text.strip():
+
+        st.warning(
+            "Please enter a message first."
+        )
+
+    else:
+
+        prediction_result = predict_intent(text)
+
+
+# ------------------------------------------------------------
+# PREDICTION CARD
+# ------------------------------------------------------------
+
+with col_prediction:
 
     st.subheader("Prediction")
 
-    if predict_button:
+    if prediction_result is not None:
 
-        if not text.strip():
+        predicted_intent, predicted_probability, top3_df = (
+            prediction_result
+        )
 
-            st.warning(
-                "Please enter a message first."
-            )
-
-        else:
-
-            (
-                predicted_intent,
-                predicted_probability,
-                top3_df
-            ) = predict_intent(text)
-
-            st.markdown(
-                f"""
-                <div class="prediction-box">
+        st.markdown(
+            f"""
+            <div class="prediction-card">
 
                 <div class="prediction-label">
-                Predicted Intent
+                    Predicted Intent
                 </div>
 
                 <div class="prediction-value">
-                {predicted_intent}
+                    {predicted_intent}
                 </div>
 
-                <br>
-
                 <div class="prediction-label">
-                Prediction Probability
+                    Prediction Probability
                 </div>
 
                 <div class="prediction-value">
-                {predicted_probability:.2f}%
+                    {predicted_probability:.2f}%
                 </div>
 
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    else:
+
+        st.info(
+            "Enter a message and click "
+            "**Predict Intent**."
+        )
 
 
 # ============================================================
 # TOP 3 PREDICTIONS
 # ============================================================
 
-if predict_button and text.strip():
+if prediction_result is not None:
 
     st.markdown("---")
 
     st.subheader("Top 3 Predictions")
 
-    # Reverse so highest probability appears at top
-    chart_df = (
-        top3_df
-        .iloc[::-1]
-        .reset_index(drop=True)
+    # Plotly chart
+    chart_df = top3_df.copy()
+
+    chart_df["Probability"] = chart_df[
+        "Probability"
+    ].round(2)
+
+    chart_df = chart_df.sort_values(
+        "Probability",
+        ascending=True
     )
 
-    st.bar_chart(
-        chart_df.set_index("Intent")["Probability"],
-        horizontal=True,
-        x_label="Probability (%)",
-        y_label="Intent"
+    fig = px.bar(
+        chart_df,
+        x="Probability",
+        y="Intent",
+        orientation="h",
+        text="Probability",
+        labels={
+            "Probability": "Probability (%)",
+            "Intent": "Intent"
+        },
+        title="Top 3 Intent Predictions"
     )
 
-    # Show exact values
+    fig.update_traces(
+        texttemplate="%{text:.2f}%",
+        textposition="outside"
+    )
+
+    fig.update_layout(
+        height=280,
+        margin=dict(
+            l=20,
+            r=40,
+            t=50,
+            b=20
+        ),
+        xaxis=dict(
+            range=[
+                0,
+                min(
+                    100,
+                    max(
+                        100,
+                        chart_df["Probability"].max() * 1.15
+                    )
+                )
+            ]
+        )
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+
+    # --------------------------------------------------------
+    # TOP 3 TABLE
+    # --------------------------------------------------------
+
     display_df = top3_df.copy()
 
     display_df["Probability"] = (
@@ -391,41 +501,37 @@ if predict_button and text.strip():
     st.caption(
         "Prediction probability represents the softmax "
         "probability assigned by the model to each class. "
-        "It is not a guarantee of correctness."
+        "It is not a guarantee that the prediction is correct."
     )
 
 
 # ============================================================
-# EXAMPLE QUERIES
+# TRY AN EXAMPLE
 # ============================================================
 
 st.markdown("---")
 
-st.subheader("💡 Try an Example")
+st.subheader("Try an Example")
 
-examples = [
-    "wake me up at 7 tomorrow",
-    "what time is my alarm",
-    "cancel my alarm",
-    "turn the lights off",
-    "make the lights brighter",
-    "play some music",
-    "turn the volume down",
-    "what is the weather today",
-    "find me a taxi",
-    "send an email to John",
-    "what is the capital of France",
-    "tell me a joke",
-    "what's happening in LA?",
-    "good night"
-]
+st.caption(
+    "Click an example to place it in the message box."
+)
+
 
 example_cols = st.columns(4)
 
 for i, example in enumerate(examples):
 
     with example_cols[i % 4]:
-        st.caption(example)
+
+        if st.button(
+            example,
+            key=f"example_{i}",
+            use_container_width=True
+        ):
+
+            st.session_state.message_input = example
+            st.rerun()
 
 
 # ============================================================
@@ -480,7 +586,7 @@ with st.expander("📊 Model Information"):
 st.markdown(
     """
     <div class="footer">
-    Amazon MASSIVE Intent Detection • Fine-tuned BERT
+        Amazon MASSIVE Intent Detection • Fine-tuned BERT
     </div>
     """,
     unsafe_allow_html=True
