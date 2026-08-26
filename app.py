@@ -116,7 +116,6 @@ examples = [
     "good night"
 ]
 
-
 # ============================================================
 # SESSION STATE
 # ============================================================
@@ -126,6 +125,9 @@ if "message_input" not in st.session_state:
 
 if "prediction_result" not in st.session_state:
     st.session_state.prediction_result = None
+
+if "selected_example" not in st.session_state:
+    st.session_state.selected_example = None
 
 
 # ============================================================
@@ -249,6 +251,18 @@ col_input, col_prediction = st.columns(
     gap="large"
 )
 
+# ============================================================
+# HANDLE SELECTED EXAMPLE
+# ============================================================
+
+if st.session_state.selected_example is not None:
+
+    st.session_state.message_input = (
+        st.session_state.selected_example
+    )
+
+    st.session_state.selected_example = None
+    
 
 # ============================================================
 # INPUT AREA
@@ -499,19 +513,17 @@ if st.session_state.prediction_result is not None:
         "It is not a guarantee that the prediction is correct."
     )
 
-
 # ============================================================
 # TRY AN EXAMPLE
 # ============================================================
 
 st.markdown("---")
 
-st.subheader("Try an Example")
+st.subheader("💡 Try an Example")
 
 st.caption(
     "Click an example to place it in the message box."
 )
-
 
 example_cols = st.columns(4)
 
@@ -525,13 +537,10 @@ for i, example in enumerate(examples):
             use_container_width=True
         ):
 
-            # Put example into input box
-            st.session_state.message_input = example
+            st.session_state.selected_example = example
 
-            # Clear previous prediction
             st.session_state.prediction_result = None
 
-            # Rerun application
             st.rerun()
 
 
