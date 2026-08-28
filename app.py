@@ -3,33 +3,17 @@ import pandas as pd
 import torch
 import plotly.express as px
 
-from transformers import (
-    AutoTokenizer,
-    AutoModelForSequenceClassification
-)
+from transformers import (AutoTokenizer, AutoModelForSequenceClassification)
 
-
-# ============================================================
 # PAGE CONFIGURATION
-# ============================================================
+st.set_page_config(page_title="Intent Detector System",layout="wide")
 
-st.set_page_config(
-    page_title="Intent Detector System",
-    layout="wide"
-)
-
-
-# ============================================================
 # MODEL CONFIGURATION
-# ============================================================
 
 MODEL_NAME = "abdinshaikh/intenr-bert"
 MAX_LENGTH = 128
 
-
-# ============================================================
 # INTENT LABELS
-# ============================================================
 
 intent_names = [
     "datetime_query",
@@ -94,11 +78,7 @@ intent_names = [
     "lists_query"
 ]
 
-
-# ============================================================
 # EXAMPLE UTTERANCES
-# ============================================================
-
 examples = [
     "wake me up at 7 tomorrow",
     "what time is my alarm",
@@ -116,9 +96,7 @@ examples = [
     "good night"
 ]
 
-# ============================================================
 # SESSION STATE
-# ============================================================
 
 if "message_input" not in st.session_state:
     st.session_state.message_input = ""
@@ -130,23 +108,17 @@ if "selected_example" not in st.session_state:
     st.session_state.selected_example = None
 
 
-# ============================================================
 # MODEL LOADING
-# ============================================================
 
 @st.cache_resource(show_spinner=False)
 def load_model():
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        MODEL_NAME
-    )
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
-    model = AutoModelForSequenceClassification.from_pretrained(
-        MODEL_NAME
-    )
+    model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
 
     # Streamlit Community Cloud
-    # Use CPU for inference.
+    # Used CPU for inference
     device = torch.device("cpu")
 
     model.to(device)
@@ -154,19 +126,12 @@ def load_model():
 
     return tokenizer, model, device
 
-
-# ============================================================
 # LOAD MODEL
-# ============================================================
 
 with st.spinner("Loading BERT model..."):
     tokenizer, model, device = load_model()
 
-
-# ============================================================
 # CUSTOM CSS
-# ============================================================
-
 st.markdown(
     """
 <style>
@@ -220,10 +185,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-# ============================================================
 # HEADER
-# ============================================================
 
 st.markdown(
     '<div class="main-title">Intent Detector System</div>',
@@ -241,19 +203,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-# ============================================================
 # INPUT + PREDICTION
-# ============================================================
 
-col_input, col_prediction = st.columns(
-    [2, 1],
-    gap="large"
-)
+col_input, col_prediction = st.columns([2, 1], gap="large")
 
-# ============================================================
+
 # HANDLE SELECTED EXAMPLE
-# ============================================================
 
 if st.session_state.selected_example is not None:
 
@@ -263,10 +218,7 @@ if st.session_state.selected_example is not None:
 
     st.session_state.selected_example = None
     
-
-# ============================================================
 # INPUT AREA
-# ============================================================
 
 with col_input:
 
@@ -286,19 +238,12 @@ with col_input:
         use_container_width=True
     )
 
-
-# ============================================================
 # PREDICTION FUNCTION
-# ============================================================
 
 def predict_intent(text):
 
     inputs = tokenizer(
-        text,
-        return_tensors="pt",
-        truncation=True,
-        padding=True,
-        max_length=MAX_LENGTH
+        text, return_tensors="pt", truncation=True, padding=True, max_length=MAX_LENGTH
     )
 
     inputs = {
@@ -332,10 +277,7 @@ def predict_intent(text):
 
     top3_data = []
 
-    for probability, index in zip(
-        top_probabilities,
-        top_indices
-    ):
+    for probability, index in zip(top_probabilities,top_indices):
 
         index = index.item()
 
@@ -346,16 +288,9 @@ def predict_intent(text):
 
     top3_df = pd.DataFrame(top3_data)
 
-    return (
-        predicted_intent,
-        predicted_probability,
-        top3_df
-    )
+    return (predicted_intent, predicted_probability, top3_df)
 
-
-# ============================================================
 # RUN PREDICTION
-# ============================================================
 
 if predict_button:
 
@@ -375,11 +310,7 @@ if predict_button:
             predict_intent(text)
         )
 
-
-# ============================================================
 # DISPLAY PREDICTION
-# ============================================================
-
 with col_prediction:
 
     st.subheader("Prediction")
@@ -409,11 +340,7 @@ with col_prediction:
             "**Predict Intent**."
         )
 
-
-# ============================================================
 # TOP 3 PREDICTIONS
-# ============================================================
-
 if st.session_state.prediction_result is not None:
 
     (
@@ -427,26 +354,15 @@ if st.session_state.prediction_result is not None:
     st.subheader("Top 3 Predictions")
 
 
-    # --------------------------------------------------------
     # PREPARE CHART DATA
-    # --------------------------------------------------------
-
     chart_df = top3_df.copy()
 
-    chart_df["Probability"] = (
-        chart_df["Probability"].round(2)
-    )
+    chart_df["Probability"] = (chart_df["Probability"].round(2))
 
-    chart_df = chart_df.sort_values(
-        "Probability",
-        ascending=True
-    )
+    chart_df = chart_df.sort_values("Probability", ascending=True)
 
 
-    # --------------------------------------------------------
     # PLOTLY CHART
-    # --------------------------------------------------------
-
     fig = px.bar(
         chart_df,
         x="Probability",
@@ -484,16 +400,10 @@ if st.session_state.prediction_result is not None:
         )
     )
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+    st.plotly_chart(fig,use_container_width=True)
 
 
-    # --------------------------------------------------------
     # TOP 3 TABLE
-    # --------------------------------------------------------
-
     display_df = top3_df.copy()
 
     display_df["Probability"] = (
@@ -513,10 +423,8 @@ if st.session_state.prediction_result is not None:
         "It is not a guarantee that the prediction is correct."
     )
 
-# ============================================================
-# TRY AN EXAMPLE
-# ============================================================
 
+# TRY AN EXAMPLE
 st.markdown("---")
 
 st.subheader("💡 Try an Example")
@@ -544,10 +452,7 @@ for i, example in enumerate(examples):
             st.rerun()
 
 
-# ============================================================
 # MODEL INFORMATION
-# ============================================================
-
 st.markdown("---")
 
 with st.expander("📊 Model Information"):
@@ -588,11 +493,7 @@ with st.expander("📊 Model Information"):
 """
         )
 
-
-# ============================================================
 # FOOTER
-# ============================================================
-
 st.markdown(
     """
 <div class="footer">
